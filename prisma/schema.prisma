@@ -1,0 +1,45 @@
+// datasource and generator
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum IntakeStatus {
+  NEW
+  REVIEWING
+  QUALIFIED
+  NOT_A_FIT
+}
+
+model Intake {
+  id                 String       @id @default(uuid())
+  companyName        String
+  contactName        String
+  email              String
+  phone              String
+  state              String
+  industry           String
+  annualRevenueRange String
+  netWorthRange      String
+  liquidityRange     String
+  fundingNeed        String
+  useOfFunds         String
+  timeHorizonMonths  Int
+  notes              String?
+  status             IntakeStatus @default(NEW)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+model AdminUser {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
