@@ -1,5 +1,5 @@
 import { prisma } from '../config/prisma.js';
-import { sendIntakeNotification } from '../utils/mailer.js';
+import { sendIntakeNotification, sendIntakeConfirmation } from '../utils/mailer.js';
 
 const buildFilters = ({ status, startDate, endDate, state, companyName }) => {
   const where = {};
@@ -40,7 +40,13 @@ export const createIntake = async (req, res, next) => {
     try {
       await sendIntakeNotification(intake);
     } catch (emailError) {
-      console.error('Intake saved, but email notification failed:', emailError);
+      console.error('Intake saved, but internal email notification failed:', emailError);
+    }
+
+    try {
+      await sendIntakeConfirmation(intake);
+    } catch (confirmationError) {
+      console.error('Intake saved, but client confirmation email failed:', confirmationError);
     }
 
     res.status(201).json(intake);
