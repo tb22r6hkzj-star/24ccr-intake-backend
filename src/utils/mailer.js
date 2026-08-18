@@ -23,14 +23,21 @@ const formatValue = (value) => {
   return String(value);
 };
 
-export const sendIntakeNotification = async (intake) => {
+const getTransporter = () => {
   const config = getMailerConfig();
   if (!config) {
+    return null;
+  }
+  return nodemailer.createTransport(config);
+};
+
+export const sendIntakeNotification = async (intake) => {
+  const transporter = getTransporter();
+  if (!transporter) {
     console.warn('Intake email notification skipped: SMTP configuration is incomplete.');
     return { sent: false, reason: 'smtp_not_configured' };
   }
 
-  const transporter = nodemailer.createTransport(config);
   const to = process.env.INTAKE_NOTIFICATION_TO || 'info@24ccrgroup.com';
   const from = process.env.SMTP_FROM || process.env.SMTP_USER;
 
@@ -61,6 +68,40 @@ export const sendIntakeNotification = async (intake) => {
     from,
     to,
     replyTo: intake.email,
+    subject,
+    text,
+  });
+
+  return { sent: true };
+};
+
+export const sendIntakeConfirmation = async (intake) => {
+  const transporter = getTransporter();
+  if (!transporter) {
+    console.warn('Client confirmation email skipped: SMTP configuration is incomplete.');
+    return { sent: false, reason: 'smtp_not_configured' };
+  }
+
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  const replyTo = process.env.INTAKE_NOTIFICATION_TO || 'info@24ccrgroup.com';
+  const name = formatValue(intake.contactName);
+
+  const subject = '24CCR Capital Alignment Request Received';
+  const text = [
+    `Hello ${name},`,
+    '',
+    'Thank you for submitting your Capital Alignment request to 24CCR. Your information has been received and will be reviewed for fit and next-step direction.',
+    '',
+    'Submission does not guarantee acceptance, financing, approval, placement, or any specific outcome. If additional information is needed, we will contact you using the information you provided.',
+    '',
+    '24CCR Group',
+    'info@24ccrgroup.com',
+  ].join('\n');
+
+  await transporter.sendMail({
+    from,
+    to: intake.email,
+    replyTo,
     subject,
     text,
   });
