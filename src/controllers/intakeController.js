@@ -1,4 +1,5 @@
 import { prisma } from '../config/prisma.js';
+import { sendIntakeNotification } from '../utils/mailer.js';
 
 const buildFilters = ({ status, startDate, endDate, state, companyName }) => {
   const where = {};
@@ -35,6 +36,13 @@ export const createIntake = async (req, res, next) => {
   try {
     const data = req.body;
     const intake = await prisma.intake.create({ data });
+
+    try {
+      await sendIntakeNotification(intake);
+    } catch (emailError) {
+      console.error('Intake saved, but email notification failed:', emailError);
+    }
+
     res.status(201).json(intake);
   } catch (error) {
     next(error);
